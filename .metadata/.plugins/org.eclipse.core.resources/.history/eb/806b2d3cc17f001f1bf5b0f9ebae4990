@@ -1,0 +1,12 @@
+package JavaOrientedFrameworkDevelopment;
+
+import org.testng.annotations.Test;
+
+public class Code17TestNGAnnotationsHelpWithInheritance1 extends Code17TestNGAnnotationsHelpWithInheritance{
+	
+	@Test
+	public void testRun() {
+		doThis();
+	}
+
+}

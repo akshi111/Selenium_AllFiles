@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="Suite">
+  <test name="PersonalLoan-1">
+	  
+	  <groups>
+		  <run>
+			  <include name="Smoke"/>
+		  </run>
+	  </groups>
+    <classes>
+      <class name="RunningTestCasesInTestNG1.Code1"/>
+      <class name="RunningTestCasesInTestNG1.Code2PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code3PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code4PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code5TestingAnnotations1"/>
+      <class name="RunningTestCasesInTestNG1.Code6TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code7TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code8TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code9UsageOfGroupsFunctionality1"/>
+      <class name="RunningTestCasesInTestNG1.Code10UsageOfGroupsFunctionality2"/>
+    </classes>
+  </test> <!-- Test -->
+</suite> <!-- Suite -->

@@ -1,0 +1,20 @@
+import java.net.URL;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
+
+public class GoogleTest {
+	
+	@Test
+	public void HomePageCheck() {
+		
+		DesiredCapabilities caps = new DesiredCapabilities();
+		
+		
+		WebDriver driver = new RemoteWebDriver(new URL("http://192.168.51.48:4444"),caps);
+		driver.get("https://www.google.co.in/");
+		
+		
+	}
+
+}

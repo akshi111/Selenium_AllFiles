@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Suite">
+	
+	<listeners>
+		<listener class-name="RunningTestCasesInTestNG1.Code15ListenersInterfaceInTestNG"/>
+	</listeners>
+	
+	<parameter name="URL" value="qaclickacademy.com"/>
+	<parameter name="API Key/Username" value="123456"/>
+  <test name="PersonalLoan">
+	  	  
+    <classes>
+		
+      <class name="RunningTestCasesInTestNG1.Code1"/>
+      <class name="RunningTestCasesInTestNG1.Code2PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code3PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code4PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code5TestingAnnotations1"/>
+      <class name="RunningTestCasesInTestNG1.Code6TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code7TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code8TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code9UsageOfGroupsFunctionality1"/>
+      <class name="RunningTestCasesInTestNG1.Code10UsageOfGroupsFunctionality2"/>
+      <class name="RunningTestCasesInTestNG1.Code11AnnotationsHelperAttributesWithExample"/>
+      <class name="RunningTestCasesInTestNG1.Code12ParameterizingFromTestNGxmlFile"/>
+      <class name="RunningTestCasesInTestNG1.Code13DataProviderAnnotation1"/>
+      <class name="RunningTestCasesInTestNG1.Code14DataProviderAnnotation2"/>
+      <class name="RunningTestCasesInTestNG1.Code15ListenersInterfaceInTestNG2failedTestCase"/>
+
+    </classes>
+  </test> <!-- Test -->
+</suite> <!-- Suite -->

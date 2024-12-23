@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite thread-count="6" parallel="tests" name="Failed suite [Suite]" guice-stage="DEVELOPMENT">
+  <parameter name="API Key/Username" value="123456"/>
+  <parameter name="URL" value="qaclickacademy.com"/>
+  <listeners>
+    <listener class-name="RunningTestCasesInTestNG1.Code15ListenersInterfaceInTestNG1"/>
+  </listeners>
+  <test thread-count="6" parallel="tests" name="PersonalLoan(failed)">
+    <classes>
+      <class name="RunningTestCasesInTestNG1.Code15ListenersInterfaceInTestNG2failedTestCase">
+        <methods>
+          <include name="lastexecution"/>
+          <include name="first"/>
+        </methods>
+      </class> <!-- RunningTestCasesInTestNG1.Code15ListenersInterfaceInTestNG2failedTestCase -->
+      <class name="RunningTestCasesInTestNG1.Code16RunnungTestsInParallelAndGeneratingReports2">
+        <methods>
+          <include name="execution"/>
+          <include name="evaluated"/>
+        </methods>
+      </class> <!-- RunningTestCasesInTestNG1.Code16RunnungTestsInParallelAndGeneratingReports2 -->
+    </classes>
+  </test> <!-- PersonalLoan(failed) -->
+</suite> <!-- Failed suite [Suite] -->

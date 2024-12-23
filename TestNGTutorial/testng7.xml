@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="Suite">
+  <test name="PersonalLoan">
+    <classes>
+      <class name="RunningTestCasesInTestNG1.Code1"/>
+      <class name="RunningTestCasesInTestNG1.Code2PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code4PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code5TestingAnnotations1"/>
+	  <class name="RunningTestCasesInTestNG1.Code6TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code7TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code8TestingAnnotations2"/>
+      <class name="RunningTestCasesInTestNG1.Code9UsageOfGroupsFunctionality"/>
+
+
+    </classes>
+  </test> <!-- Test -->
+  
+  <test name = "CarLoan">
+  <classes>
+      <class name="RunningTestCasesInTestNG1.Code3PrioritizingTestCasesWithTestNG"/>
+  </classes>
+  </test>
+</suite> <!-- Suite -->

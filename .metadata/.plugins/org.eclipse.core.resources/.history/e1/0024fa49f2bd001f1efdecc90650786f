@@ -1,0 +1,10 @@
+public class GoogleTest {
+	
+	@Test
+	public void HomePageCheck() {
+		
+		
+		
+	}
+
+}

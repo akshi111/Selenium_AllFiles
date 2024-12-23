@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="Suite">
+  <test name="PersonalLoan-1">
+    <classes>
+      <class name="RunningTestCasesInTestNG1.Code1"/>
+      <class name="RunningTestCasesInTestNG1.Code2PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code4PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code5TestingAnnotations1"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  <test name = "CarLoan">
+  <classes>
+      <class name="RunningTestCasesInTestNG1.Code3PrioritizingTestCasesWithTestNG"/>
+  </classes>
+  </test>
+</suite> <!-- Suite -->

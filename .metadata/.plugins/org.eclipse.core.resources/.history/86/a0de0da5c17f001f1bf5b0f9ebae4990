@@ -1,0 +1,15 @@
+package JavaOrientedFrameworkDevelopment;
+
+import org.testng.annotations.Test;
+
+public class Code17TestNGAnnotationsHelpWithInheritance1 extends Code17TestNGAnnotationsHelpWithInheritance{
+	
+	@Test
+	public void testRun() {
+		doThis();
+		Code18PassValuesThroughParameterizedAndThisKeyword Code18PassValuesThroughParameterizedAndThisKeyword = new Code18PassValuesThroughParameterizedAndThisKeyword(3);
+		Code18PassValuesThroughParameterizedAndThisKeyword.increment();
+		Code18PassValuesThroughParameterizedAndThisKeyword.decrement();
+	}
+
+}

@@ -1,0 +1,1561 @@
+20 - Part03
+
+CODE 07(DOUBT & ERROR)
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite parallel="tests" name="Suite" >
+	<groups>
+	<run>
+		<include name="ErrorHandling"/>
+	</run>
+</groups>
+  <test thread-count="2" name="Code2SubmitOrderTest2">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code2SubmitOrderTest2"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  <test thread-count="2" name="Code3ErrorValidations1">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code3ErrorValidations2"/>
+    </classes>
+  </test>
+  
+  
+</suite> <!-- Suite -->
+
+>>
+
+package End_To_End_SeleniumFramework;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.AssertJUnit;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+
+public class Code3ErrorValidations2 extends BaseTest{
+	
+	@Test(groups = {"ErrorHandling"})
+	public void logInPage(){
+	    String productName = "ZARA COAT 3";
+	    
+	    // Explicit wait to wait for the login page to load properly
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+	    
+	    // Log in to the application
+	    logInPage.logInApplication("ramastha159@gmail.com", "Akshi@101");
+		Assert.assertEquals("Incorrect email or password.", logInPage.geterrorMessage());
+
+
+	    // Wait for the error message to appear (adjust the XPath as per your application)
+//	    WebElement errorMessageElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@aria-label = 'Incorrect email or password']")));
+//	    
+//	    // Assert the error message
+//	    String actualErrorMessage = logInPage.geterrorMessage();
+//	    AssertJUnit.assertEquals("Incorrect email or password", actualErrorMessage);
+	}
+
+	@Test		
+	public void productCatalog() throws InterruptedException, IOException {
+		String productName = "ZARA COAT 3";
+		ProductCatalog productCatalog = logInPage.logInApplication("itc@gmail.com", "Dummy@123");
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(productName);	
+		CartPage cartPage = productCatalog.goToCartPage();
+		Boolean match = cartPage.verifyProductDisplay("ZARA COAT 33");
+		Assert.assertFalse(match);
+	}
+
+}
+
+
+>>
+package testComponents;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Properties;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import packageObjects.LogInPage;
+
+public class BaseTest {
+	
+	public WebDriver driver;
+	public LogInPage logInPage;
+	
+	public WebDriver initializeDriver() throws IOException {
+		
+		//Properties class can read the global properties
+		Properties prop = new Properties();
+		FileInputStream fis = new FileInputStream(System.getProperty("user.dir")+"//src//main//java//resources//GlobalData.properties");	
+		prop.load(fis);
+		String browserName = prop.getProperty("browser");
+				
+		if (browserName.equals("chrome")) {
+		
+		WebDriverManager.chromedriver().setup();
+			driver = new ChromeDriver();
+		}
+		else if (browserName.equals("firefox")) {
+			driver = new FirefoxDriver();			
+		}
+		else if (browserName.equals("edge")) {
+			System.setProperty("webdriver.edge.driver", "edge.exe");
+			driver = new EdgeDriver();
+		}
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		driver.manage().window().maximize();
+		return driver;
+		
+	}
+	
+	@BeforeMethod(alwaysRun=true)
+	public LogInPage launchApplication() throws IOException {
+		driver  = initializeDriver();
+		logInPage = new LogInPage(driver);
+		logInPage.goTo();
+		return logInPage;
+		
+	}
+	
+	@AfterMethod(alwaysRun=true)
+	public void tearDown() {
+		driver.close();
+	}
+
+}
+===========================================================================================
+PART 04
+
+CODE 01
+
+package End_To_End_SeleniumFramework;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.openqa.selenium.WebElement;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.CheckOutPage;
+import packageObjects.ConfirmationPage;
+import packageObjects.OrderPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+
+public class Code4ImplementingParameterizationIntoTestsWithTestNGDataProvider extends BaseTest {
+	
+	String productName = "ZARA COAT 3";	
+	@Test(dataProvider = "getData", groups = {"Purchase"})	
+	public void submitOrder(String email, String password, String productName) throws InterruptedException, IOException {
+		ProductCatalog productCatalog = logInPage.logInApplication(email, password);
+	
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(productName);	
+		
+		CartPage cartPage = productCatalog.goToCartPage();
+
+		Boolean match = cartPage.verifyProductDisplay(productName);
+		Assert.assertTrue(match);
+		
+		CheckOutPage checkOutPage = cartPage.goToCheckOut();
+		checkOutPage.SelectCountry("india");
+		
+		ConfirmationPage confirmationPage = checkOutPage.submitOrder();
+		String confirmMessage = confirmationPage.getconfirmationMessage();
+		Assert.assertTrue(confirmMessage.equalsIgnoreCase("Thankyou for the order."));
+	}
+	
+	@Test(dependsOnMethods = {"submitOrder"})
+	public void OrderHistory() throws InterruptedException {
+		ProductCatalog productCatalog = logInPage.logInApplication("ramastha159@gmail.com", "Akshi@1001");
+		OrderPage ordersPage = productCatalog.goToOrdersPage();
+		Assert.assertTrue(ordersPage.verifyOrderDisplay(productName));
+	}
+	
+	@DataProvider
+	public Object[][] getData() {
+	// to run test with two different data sets and to run two sets we need to create two dimensional data array which accepts multiple sets 
+	return new Object[][] {{"ramastha159@gmail.com","Akshi@1001", "ZARA COAT 3"},{"itc@gmail.com","Dummy@123", "ADIDAS ORIGINAL"}};
+	
+	}
+}
+
+Testng_Purchase-
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite parallel="tests" name="Suite" >
+	<groups>
+	<run>
+		<include name="Pruchase"/>
+	</run>
+</groups>
+  <test thread-count="2" name="Code4ImplementingParameterizationIntoTestsWithTestNGDataProvider">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code4ImplementingParameterizationIntoTestsWithTestNGDataProvider"/>
+    </classes>
+  </test> <!-- Test -->
+  
+</suite> <!-- Suite -->
+
+CODE 02
+
+package End_To_End_SeleniumFramework;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+
+import org.openqa.selenium.WebElement;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.CheckOutPage;
+import packageObjects.ConfirmationPage;
+import packageObjects.OrderPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+
+public class Code5HashMapToDataProviderToSendTheDataAsOneHashObject extends BaseTest {
+	
+	String productName = "ZARA COAT 3";	
+	@Test(dataProvider = "getData", groups = {"Purchase"})	
+	public void submitOrder(HashMap<String, String> input) throws InterruptedException, IOException {
+		ProductCatalog productCatalog = logInPage.logInApplication(input.get("email"),input.get("password"));
+	
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(input.get(productName));	
+		
+		CartPage cartPage = productCatalog.goToCartPage();
+		Boolean match = cartPage.verifyProductDisplay(input.get(productName));
+		Assert.assertTrue(match);
+		
+		CheckOutPage checkOutPage = cartPage.goToCheckOut();
+		checkOutPage.SelectCountry("india");
+		
+		ConfirmationPage confirmationPage = checkOutPage.submitOrder();
+		String confirmMessage = confirmationPage.getconfirmationMessage();
+		Assert.assertTrue(confirmMessage.equalsIgnoreCase("Thankyou for the order."));
+	}
+	
+	@Test(dependsOnMethods = {"submitOrder"})
+	public void OrderHistory() throws InterruptedException {
+		ProductCatalog productCatalog = logInPage.logInApplication("ramastha159@gmail.com", "Akshi@1001");
+		OrderPage ordersPage = productCatalog.goToOrdersPage();
+		Assert.assertTrue(ordersPage.verifyOrderDisplay(productName));
+	}
+	
+	@DataProvider
+	public Object[][] getData() {
+	HashMap<String, String> map = new HashMap<String, String>();
+	map.put("emial","ramastha159@gmail.com");
+	map.put("password", "Akshi@1001");
+	map.put("productName", "ZARA COAT 3");
+	
+	HashMap<String, String> map1 = new HashMap<String, String>();
+	map1.put("emial","itc@gmail.com");
+	map1.put("password", "Dummy@123");
+	map1.put("productName", "ADIDAS ORIGINAL");
+	// to run test with two different data sets and to run two sets we need to create two dimensional data array which accepts multiple sets 
+	return new Object[][] {{map},{map1}};
+	
+	}
+	
+	
+
+}
+
+
+Testng.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite parallel="tests" name="Suite" >
+	<groups>
+	<run>
+		<include name="Purchase"/>
+	</run>
+</groups>
+  <test thread-count="5" name="Code4ImplementingParameterizationIntoTestsWithTestNGDataProvider" parallel="classes">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code4ImplementingParameterizationIntoTestsWithTestNGDataProvider"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  <test thread-count="5" name="Code5HashMapToDataProviderToSendTheDataAsOneHashObject" parallel="classes">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code5HashMapToDataProviderToSendTheDataAsOneHashObject"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  
+</suite> <!-- Suite -->
+
+======================================================
+
+173. How to read the data from Json files and create the list of Hashmaps for testing
+
+CODE 03
+
+In DataReader we can write "n" no.of utilities to scan Json to retrieve the values based on the requirement.
+
+Jackson Databin - in pom.file
+<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.13.3</version>
+</dependency>
+
+"ObjectMapper" has a "readValue"  which can read the string and convert that into HashMap
+"readValue"(i.e. first argument) this argument is the string that i want to convert into hashmap
+"second argument" is how you want to convert it. 
+
+In this code "data" is a list with two arguments.
+
+DataReader - 
+
+package Data;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.commons.io.FileUtils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class DataReader {
+	public List<HashMap<String, String>> getJsonDataToMap() throws IOException {
+	//read json to string
+	String jsonContent	= FileUtils.readFileToString(new File(System.getProperty("user.dir")+"src//test//java//Data//PurchaseOrder.json"),
+			StandardCharsets.UTF_8);
+	//String to HashMap Jackson Databin	 
+	ObjectMapper mapper = new ObjectMapper();
+	List<HashMap<String, String>> data = mapper.readValue(jsonContent, new TypeReference<List<HashMap<String, String>>>(){});
+	return data;
+	}
+
+}
+
+PurchaseOrder.json - 
+
+[
+  {
+    "email" : "ramastha159@gmail.com",
+    "password" : "Akshi@1001",
+    "product" : "ZARA COAT 3"
+  },
+  {
+    "email" : "itc@gmail.com",
+    "password" : "Dummy@123",
+    "product" : "ADIDAS ORIGINAL"
+  }
+]
+
+BaseTest - 
+
+package testComponents;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import packageObjects.LogInPage;
+
+public class BaseTest {
+	
+	public WebDriver driver;
+	public LogInPage logInPage;
+	
+	public WebDriver initializeDriver() throws IOException {
+		
+		//Properties class can read the global properties
+		Properties prop = new Properties();
+		FileInputStream fis = new FileInputStream(System.getProperty("user.dir")+"//src//main//java//resources//GlobalData.properties");	
+		prop.load(fis);
+		String browserName = prop.getProperty("browser");
+				
+		if (browserName.equals("chrome")) {
+		
+		WebDriverManager.chromedriver().setup();
+			driver = new ChromeDriver();
+		}
+		else if (browserName.equals("firefox")) {
+			driver = new FirefoxDriver();			
+		}
+		else if (browserName.equals("edge")) {
+			System.setProperty("webdriver.edge.driver", "edge.exe");
+			driver = new EdgeDriver();
+		}
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		driver.manage().window().maximize();
+		return driver;
+		
+	}
+	
+	public List<HashMap<String, String>> getJsonDataToMap(String filePath) throws IOException {
+		//read json to string
+		String jsonContent	= FileUtils.readFileToString(new File(filePath),StandardCharsets.UTF_8);
+		//String to HashMap Jackson Databin	 
+		ObjectMapper mapper = new ObjectMapper();
+		List<HashMap<String, String>> data = mapper.readValue(jsonContent, new TypeReference<List<HashMap<String, String>>>() {});
+		return data;
+		}
+	
+	@BeforeMethod(alwaysRun=true)
+	public LogInPage launchApplication() throws IOException  {
+		driver  = initializeDriver();
+		logInPage = new LogInPage(driver);
+		logInPage.goTo();
+		return logInPage;
+		
+	}
+	
+	@AfterMethod(alwaysRun=true)
+	public void tearDown() {
+		driver.close();
+	}
+
+}
+
+
+
+package End_To_End_SeleniumFramework;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+
+import org.openqa.selenium.WebElement;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.CheckOutPage;
+import packageObjects.ConfirmationPage;
+import packageObjects.OrderPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+
+public class Code6ReadTheDataFromJsonFilesAndCreateTheListOfHashMapsForTesting extends BaseTest {
+	
+	String productName = "ZARA COAT 3";	
+	@Test(dataProvider = "getData", groups = {"Purchase"})	
+	public void submitOrder(HashMap<String, String> input) throws InterruptedException, IOException {
+		ProductCatalog productCatalog = logInPage.logInApplication(input.get("email"),input.get("password"));
+	
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(input.get("product"));	
+		
+		CartPage cartPage = productCatalog.goToCartPage();
+		Boolean match = cartPage.verifyProductDisplay(input.get("product"));
+		Assert.assertTrue(match);
+		
+		CheckOutPage checkOutPage = cartPage.goToCheckOut();
+		checkOutPage.SelectCountry("india");
+		
+		ConfirmationPage confirmationPage = checkOutPage.submitOrder();
+		String confirmMessage = confirmationPage.getconfirmationMessage();
+		Assert.assertTrue(confirmMessage.equalsIgnoreCase("Thankyou for the order."));
+	}
+	
+	@Test(dependsOnMethods = {"submitOrder"})
+	public void OrderHistory() throws InterruptedException {
+		ProductCatalog productCatalog = logInPage.logInApplication("ramastha159@gmail.com", "Akshi@1001");
+		OrderPage ordersPage = productCatalog.goToOrdersPage();
+		Assert.assertTrue(ordersPage.verifyOrderDisplay(productName));
+	}
+	
+	@DataProvider
+	public Object[][] getData() throws IOException {
+	// to run test with two different data sets and to run two sets we need to create two dimensional data array which accepts multiple sets 
+	List<HashMap<String, String>> data = getJsonDataToMap(System.getProperty("user.dir") + "/src/test/java/Data/PurchaseOrder.json");
+	return new Object[][] {{data.get(0)},{data.get(1)}};
+	
+	}
+	
+//	@DataProvider
+//	public Object[][] getData()  {
+//	 return new Object[][] {{"ramastha159@gmail.com","Akshi@1001","ZARA COAT 3"}, {"itc@gmail.com","Dummy@123","ADIDAS ORIGINAL"}} 	 
+//   }
+	
+	
+//	HashMap<String, String> map = new HashMap<String, String>();
+//	map.put("email","ramastha159@gmail.com");
+//	map.put("password", "Akshi@1001");
+//	map.put("product", "ZARA COAT 3");
+//	
+//	HashMap<String, String> map1 = new HashMap<String, String>();
+//	map1.put("email","itc@gmail.com");
+//	map1.put("password", "Dummy@123");
+//	map1.put("product", "ADIDAS ORIGINAL");
+	
+	
+
+}
+
+========================================================
+174. How to Create Screenshot Utility in Base Test class for catching Failed tests
+
+CODE 04
+
+In this code whenever test fails automatically it takes screenshots. And then implement one reporting so that screenshot will attach to the HTML report.
+
+We should create utility which can take screenshot. And we cast a screenshot so that driver can know it has to take a screenshot and covert it into photo mode.
+
+After taking a screenshot to take the file i.e. output in terms of file. And to store the file in workspace it has a method called "copyFile()".
+
+package End_To_End_SeleniumFramework;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebElement;
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.CheckOutPage;
+import packageObjects.ConfirmationPage;
+import packageObjects.OrderPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+
+public class Code7CreateScreeshotUtilityInBaseTestForCatchingFailedTests extends BaseTest {
+	
+	String productName = "ZARA COAT 3";	
+	@Test(dataProvider = "getData", groups = {"Purchase"})	
+	public void submitOrder(HashMap<String, String> input) throws InterruptedException, IOException {
+		ProductCatalog productCatalog = logInPage.logInApplication(input.get("email"),input.get("password"));
+	
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(input.get("product"));	
+		
+		CartPage cartPage = productCatalog.goToCartPage();
+		Boolean match = cartPage.verifyProductDisplay(input.get("product"));
+		Assert.assertTrue(match);
+		
+		CheckOutPage checkOutPage = cartPage.goToCheckOut();
+		checkOutPage.SelectCountry("india");
+		
+		ConfirmationPage confirmationPage = checkOutPage.submitOrder();
+		String confirmMessage = confirmationPage.getconfirmationMessage();
+		Assert.assertTrue(confirmMessage.equalsIgnoreCase("Thankyou for the order."));
+	}
+	
+	@Test(dependsOnMethods = {"submitOrder"})
+	public void OrderHistory() throws InterruptedException {
+		ProductCatalog productCatalog = logInPage.logInApplication("ramastha159@gmail.com", "Akshi@1001");
+		OrderPage ordersPage = productCatalog.goToOrdersPage();
+		Assert.assertTrue(ordersPage.verifyOrderDisplay(productName));
+	}
+	
+	public String Screenshot(String testCaseName) throws IOException {
+		 TakesScreenshot ts = (TakesScreenshot)driver;
+		 File source = ts.getScreenshotAs(OutputType.FILE);
+		 File file = new File(System.getProperty("user.dir")+"//reports//" + testCaseName + ".png");
+		 FileUtils.copyFile(source, file);
+		 return System.getProperty("user.dir")+"//reports//" + testCaseName + ".png";
+	}
+	
+	@DataProvider
+	public Object[][] getData() throws IOException {
+	// to run test with two different data sets and to run two sets we need to create two dimensional data array which accepts multiple sets 
+	List<HashMap<String, String>> data = getJsonDataToMap(System.getProperty("user.dir") + "/src/test/java/Data/PurchaseOrder.json");
+	return new Object[][] {{data.get(0)},{data.get(1)}};
+	
+	}
+	
+}
+
+=====================================================================
+
+22 - Framework Part:05
+
+
+Phase1-
+What is Extent Reports?
+Basic Configuration Of Extent Reports With StandAlone Test:
+
+CODE 01
+
+package extentReports;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+
+public class ExtentReportsDemo {
+	
+	ExtentReports extent;
+	
+	@BeforeTest
+	public void config() {
+		
+		//ExtentReports , ExtentSparkReporter
+		String path = System.getProperty("user.dir")+"\\reports\\index.html";
+		ExtentSparkReporter reporter = new ExtentSparkReporter(path);
+		reporter.config().setDocumentTitle("Web Automation Results");
+		reporter.config().setReportName("test Results");
+		
+		extent = new ExtentReports();
+		extent.attachReporter(reporter);
+		extent.setSystemInfo("Tester", "Rahul Shetty");
+		
+		
+	}
+	
+	@Test
+	public void initialDemo() {
+		ExtentTest test = extent.createTest("InitialDemo");
+		WebDriverManager.chromedriver().setup();
+		WebDriver driver = new ChromeDriver();
+		driver.get("https://rahulshettyacademy.com/");
+		driver.manage().window().maximize();
+		System.out.println(driver.getTitle());
+//		test.addScreenCaptureFromBase64String(); this is to capture screenshot
+		driver.close();
+		//test.fail("Results don't match");
+		extent.flush();
+		
+	}
+
+}
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>screeshots</groupId>
+  <artifactId>ExtentReports</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+
+  <name>ExtentReports</name>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+  </properties>
+
+<dependencies>
+	
+<!-- https://mvnrepository.com/artifact/io.github.bonigarcia/webdrivermanager -->
+   <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>5.7.0</version>
+    </dependency>
+
+		
+<!-- https://mvnrepository.com/artifact/com.aventstack/extentreports -->
+   <dependency>
+       <groupId>com.aventstack</groupId>
+       <artifactId>extentreports</artifactId>
+       <version>5.1.2</version>
+   </dependency>
+
+<!-- https://mvnrepository.com/artifact/org.testng/testng -->
+   <dependency>
+       <groupId>org.testng</groupId>
+       <artifactId>testng</artifactId>
+       <version>7.1.0</version>
+       <scope>test</scope>
+   </dependency>
+   
+<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
+   <dependency>
+       <groupId>org.seleniumhq.selenium</groupId>
+       <artifactId>selenium-java</artifactId>
+       <version>4.26.0</version>
+   </dependency>
+
+
+		
+</dependencies>
+</project>
+
+CODE 02
+
+package resources;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+public class ExtentReporterNG {
+	
+	public void getReportObject() {
+		
+				
+				//ExtentReports , ExtentSparkReporter
+				String path = System.getProperty("user.dir")+"\\reports\\index.html";
+				ExtentSparkReporter reporter = new ExtentSparkReporter(path);
+				reporter.config().setDocumentTitle("Web Automation Results");
+				reporter.config().setReportName("test Results");
+				
+				ExtentReports extent = new ExtentReports();
+				extent.attachReporter(reporter);
+				extent.setSystemInfo("Tester", "Rahul Shetty");	
+				extent.createTest(path);	 //instead of writing this in line in 100 testcases, with the help of TestNGListeners.
+			}
+}
+
+Cannot use test methods to get the driver because fields are associated in class level but not method level
+
+CODE 03
+
+
+package testComponents;
+
+import java.io.IOException;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+
+import resources.ExtentReporterNG;
+
+public class Listeners extends BaseTest implements ITestListener{
+	
+	 ExtentTest test;
+	 ExtentReports  extent = ExtentReporterNG.getReportObject();
+
+	@Override
+	public void onTestStart(ITestResult result) {
+		// TODO Auto-generated method stub
+		test = extent.createTest(result.getMethod().getMethodName());
+	}
+
+	@Override
+	public void onTestSuccess(ITestResult result) {
+		// TODO Auto-generated method stub
+		test.log(Status.PASS,"Test Passed");	
+	}
+
+	@Override
+	public void onTestFailure(ITestResult result) {
+		
+		try {
+			driver = (WebDriver) result.getTestClass().getRealClass().getField("driver").get(result.getInstance());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		
+		 //this is written because it should give the error message
+		  test.fail(result.getThrowable());
+//		  test.log(Status.FAIL,"Test Failes");
+		  //step:1 - Screenshot , step:2 - Attach Report
+			String  filePath = null;
+		  try {
+			filePath = getScreenshot(result.getMethod().getMethodName(),driver);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		  test.addScreenCaptureFromPath(filePath,result.getMethod().getMethodName());
+	}
+
+	@Override
+	public void onTestSkipped(ITestResult result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStart(ITestContext context) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onFinish(ITestContext context) {
+		// TODO Auto-generated method stub
+		//it will make sure that reports are generated
+		extent.flush();
+		
+	}
+
+}
+
+
+================
+
+
+CODE 04
+
+AS in testing.xml it runs two test cases so these test cases takes these listeners so that is concurrency problem.
+
+Every time we create a new object we have to push it into "Thread Local"
+
+
+package testComponents;
+
+import java.io.IOException;
+
+import org.openqa.selenium.WebDriver;
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+
+import resources.ExtentReporterNG;
+
+public class Listeners extends BaseTest implements ITestListener{
+	
+	 ExtentTest test;
+	 ExtentReports  extent = ExtentReporterNG.getReportObject();
+	 ThreadLocal<ExtentTest> extentTest = new ThreadLocal();
+
+	@Override
+	public void onTestStart(ITestResult result) {
+		// TODO Auto-generated method stub
+		test = extent.createTest(result.getMethod().getMethodName());
+		extentTest.set(test);//unique thread id(Error ValidationTest) --> test
+	}
+
+	@Override
+	public void onTestSuccess(ITestResult result) {
+		// TODO Auto-generated method stub
+		extentTest.get().log(Status.PASS,"Test Passed");	
+	}
+
+	@Override
+	public void onTestFailure(ITestResult result) {
+		
+		  extentTest.get().fail(result.getThrowable());
+
+		
+		try {
+			driver = (WebDriver) result.getTestClass().getRealClass().getField("driver").get(result.getInstance());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		
+		 //this is written because it should give the error message
+//		  test.log(Status.FAIL,"Test Failes");
+		  //step:1 - Screenshot , step:2 - Attach Report
+			String  filePath = null;
+		  try {
+			filePath = getScreenshot(result.getMethod().getMethodName(),driver);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		  extentTest.get().addScreenCaptureFromPath(filePath,result.getMethod().getMethodName());
+	}
+
+	@Override
+	public void onTestSkipped(ITestResult result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStart(ITestContext context) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onFinish(ITestContext context) {
+		// TODO Auto-generated method stub
+		//it will make sure that reports are generated
+		extent.flush();
+		
+	}
+
+}
+
+============
+
+CODE 05
+
+package rahulshettyacademy.TestComponents;
+
+import org.testng.IRetryAnalyzer;
+import org.testng.ITestResult;
+
+public class Retry implements IRetryAnalyzer {
+
+	int count = 0;
+	int maxTry = 1;
+	
+	@Override
+	public boolean retry(ITestResult result) {
+		// TODO Auto-generated method stub
+		if(count<maxTry)
+		{
+			count++;
+			return true;
+		}
+		return false;
+	}
+}
+
+
+package End_To_End_SeleniumFramework;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.AssertJUnit;
+import org.testng.annotations.Test;
+
+import packageObjects.CartPage;
+import packageObjects.ProductCatalog;
+import testComponents.BaseTest;
+import testComponents.Retry;
+
+public class Code9IRetryAnalyzerToRerunTheFlakyFailedSeleniumTestsInFramework extends BaseTest{
+	//Testng5 for this code to run
+	
+	@Test(groups= {"ErrorHandling"},retryAnalyzer=Retry.class)
+	public void logInPage(){	    
+
+	    // Log in to the application
+	    logInPage.logInApplication("ramastha159@gmail.com", "Akshi@101");
+		Assert.assertEquals("Incorrect email  password.", logInPage.geterrorMessage());
+
+	}
+
+	@Test		
+	public void productCatalog() throws InterruptedException, IOException {
+		String productName = "ZARA COAT 3";
+		ProductCatalog productCatalog = logInPage.logInApplication("itc@gmail.com", "Dummy@123");
+		List<WebElement> products = productCatalog.getProductList();
+		productCatalog.addProductToCart(productName);	
+		CartPage cartPage = productCatalog.goToCartPage();
+		Boolean match = cartPage.verifyProductDisplay("ZARA COAT 33");
+		Assert.assertFalse(match);
+	}
+
+}
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite  name="Suite">
+	
+	  <listeners>
+			<listener class-name="testComponents.Listeners"/>
+      </listeners>
+
+
+   <test thread-count="5" name="Code9IRetryAnalyzerToRerunTheFlakyFailedSeleniumTestsInFramework" >
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code9IRetryAnalyzerToRerunTheFlakyFailedSeleniumTestsInFramework"/>
+    </classes>
+  </test>
+
+  <test thread-count="5" name="Code2SubmitOrderTest2">
+    <classes>
+      <class name="End_To_End_SeleniumFramework.Code2SubmitOrderTest2"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  
+</suite> <!-- Suite -->
+
+
+
+
+
+=================================
+
+
+23. Framework Part-06
+
+CODE 01
+
+Download maven and set path.
+To check version  mvn -version
+
+maven testing integration:
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.com</groupId>
+	<artifactId>SeleniumFramework</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+
+		<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.36</version>
+			<scope>provided</scope>
+		</dependency>
+
+
+		<dependency>
+			<groupId>com.aventstack</groupId>
+			<artifactId>extentreports</artifactId>
+			<version>5.1.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.bonigarcia</groupId>
+			<artifactId>webdrivermanager</artifactId>
+			<version>5.7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>4.21.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>6.14.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>Testng</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version> <!-- Ensure this is consistent
+						across profiles -->
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>Testng1</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng1.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>ErrorValidation</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng2_errorValidationsTests.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>Purchase</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng3_Purchase.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>Purchase1</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng3_Purchase1DataProviderToHashMap.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+
+		<profile>
+			<id>Purchase2</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng3_Purchase2ReadtheDataFromJsonFilesAndCreateListOfHashMapForTesting.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<profile>
+			<id>Screenshot</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng4_Screenshot.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<profile>
+			<id>ThreadLocal</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng4_ThreadLocal.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<profile>
+			<id>IRetryAnalyzer</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>3.5.2</version>
+						<configuration>
+							<suiteXmlFiles>
+								<suiteXmlFile>
+									C:/Users/Akshitha/Desktop/NOTE/Manual_AutomationNotes/SeleniumTest/SeleniumFramework/testSuites/testng5_IRetryAnalyzer.xml</suiteXmlFile>
+							</suiteXmlFiles>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+	</profiles>
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.5.2</version>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>testSuites/testng.xml</suiteXmlFile>
+					</suiteXmlFiles>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+
+
+
+
+CODE 02
+
+mvn test -D browser=Firefox
+
+D - stands for maven parameters
+
+To read browser value which is coming from maven we should give System.getProperty i.e. this reads system level property.
+If browser value which we are taking from the maven is not null then we have to use the value from the terminal only.
+
+mvn test -PRegression : here we are not sending anyglobalProperty, but sending profile information.
+String browserName = System.getProperty("browser")!=null ? System.getProperty("browser") : prop.getProperty("browser") ;
+As there is no browser value in terminal it takes null and gives third argument i.e. false argument
+Either it is null or not somehow it will return either maven property or local property, so once it returns we store it in the browser name.
+
+Base Test:
+
+package testComponents;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import packageObjects.LogInPage;
+
+public class BaseTest {
+	
+	public WebDriver driver;
+	public LogInPage logInPage;
+	
+	public WebDriver initializeDriver() throws IOException {
+		
+		//Properties class can read the global properties
+		Properties prop = new Properties();
+		FileInputStream fis = new FileInputStream(System.getProperty("user.dir")+"//src//main//java//resources//GlobalData.properties");	
+		prop.load(fis);
+		String browserName = System.getProperty("browser")!=null ? System.getProperty("browser") : prop.getProperty("browser") ;
+//		prop.getProperty("browser");
+				
+		if (browserName.equals("chrome")) {
+		
+		WebDriverManager.chromedriver().setup();
+			driver = new ChromeDriver();
+		}
+		else if (browserName.equals("firefox")) {
+	        WebDriverManager.firefoxdriver().setup();
+//			System.setProperty("webdriver.gecko.driver", "C:\\Users\\Akshitha\\Desktop\\NOTE\\Manual_AutomationNotes\\SeleniumTest\\SeleniumFramework\\geckodriver.exe");
+			driver = new FirefoxDriver();			
+		}
+		else if (browserName.equals("edge")) {
+			System.setProperty("webdriver.edge.driver", "edge.exe");
+			driver = new EdgeDriver();
+		}
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+		driver.manage().window().maximize();
+		return driver;
+		
+	}
+	
+	public List<HashMap<String, String>> getJsonDataToMap(String filePath) throws IOException {
+		//read json to string
+		String jsonContent	= FileUtils.readFileToString(new File(filePath),StandardCharsets.UTF_8);
+		//String to HashMap Jackson Databin	 
+		ObjectMapper mapper = new ObjectMapper();
+		List<HashMap<String, String>> data = mapper.readValue(jsonContent, new TypeReference<List<HashMap<String, String>>>() {});
+		return data;
+		}
+	
+	public String getScreenshot(String testCaseName, WebDriver driver) throws IOException{
+		
+		TakesScreenshot ts = (TakesScreenshot)driver;
+		File source = ts.getScreenshotAs(OutputType.FILE);
+		File file = new File(System.getProperty("user.dir") + "//reports//" + testCaseName + ".png");
+		FileUtils.copyFile(source, file);
+		return System.getProperty("user.dir") + "//reports//" + testCaseName + ".png";
+	}
+	
+	@BeforeMethod(alwaysRun=true)
+	public LogInPage launchApplication() throws IOException  {
+		driver  = initializeDriver();
+		logInPage = new LogInPage(driver);
+		logInPage.goTo();
+		return logInPage;
+		
+	}
+	
+	@AfterMethod(alwaysRun=true)
+	public void tearDown() {
+		driver.close();
+	}
+
+}
+
+
+CODE 03
+STEP01:
+give the directory of the Jenkins directory
+to open an jar or war file in command prompt type : java -jar
+jenkins.war is given as the name it is saved in cmd: java -jar jenkins.war
+to start the port at 9090 or 8080 i give in cmd as : java -jar jenkins.war -httpPort=8080
+
+In command prompt give the below:
+cd C:\Users\Akshitha\Desktop\NOTE\Manual_AutomationNotes\SeleniumTest
+java -jar jenkins.war --enable-future-java --httpPort=8080
+
+STEP02:
+open in browser as loacalhost:8080 > select "Install suggested plugin and continue" > copy the link and paste in browser and from that browser copy the administration password and paste in the page where it is required and login and give fill the details and continue.
+
+STEP03:
+
+Click on "New" > Give Name of project as "Selenium_Framework > click "Advanced" > Click "Use custom workspace?" as my project is in local directory copy the path and paste it.
+
+Select the source code management as "None" as the project is in local directory.
+
+In "Build Steps" > click on "Invoke top-level Maven targets?" and in goals we have to provide maven command and give command as "test -PTestng -Dbrowser=chrome" and we won't give in this command as mvn because as jenkins will automatically run.
+
+Click on "Build" > and the command runs and click on the output i.e. "console output"
+
+STEP04:
+(points)01- As i gave this command "test -PTestng -Dbrowser=chrome" but i want to change it to firefox so instead of changing it to "test -PTestng -Dbrowser=firefox"
+before source code management we have options click on "Advanced" > Click "This project is parameterized" > select "choice parameter" and and give name as "browserName" and  give choices as
+chrome
+firefox
+edge     > click on "Save".
+
+And we can view "Build with parameters" here we can change it upto our choices that which browser we want. And even if we set the browser as firefox it still runs in chrome because we have set only one variable, so we have to set it in our command as " test -PTestng -Dbrowser="$browserName ". 
+
+So dynamically according to our choices we select it takes the variable in the command.
+
+02- And we have multiple parameters so for that we can add parameters. Such as before source code management we have options click on "Advanced" > Click "This project is parameterized" > select "choice parameter" and give name as "Profile" give choices as 
+Testng
+Testng1
+ErrorValidation
+Purchase
+Purchase1
+Purchase2
+Screenshot
+ThreadLocal
+IRetryAnalyzer > click on "Save".
+
+so we have to change the command as " test -P"$Profile" -Dbrowser="$browserName ".
+
+CODE 04
+
+25. Framework Part-7
+
+CODE01
+
+1. The design pattern is "page object model" and is a mix of page object model, used page factory pattern to create objects/derive locators.
+Page factory is the subset of the page object model.
+
+-> We initialized elements for page factory is we create initElements method in the constructor and we use annotations "findby".
+-> Used page factory annotations for list of elements is by giving the written type as list {i.e. @FindBy(css = ".offset-md-0")
+	List<WebElement> products;}.
+->Objects are being created, instead of creating objects for the classes in the test we are driving the objects directly by writing them in the action methods.In this if we goto the loginApplication method in that it gives the object of the next page class.
+
+2. We handle reusable utilities in 2 different methods. First for all selenium related methods we are making sure that we have one class "Abstract Components" such as common methods.
+
+-> And we are reusing them in all classes is by inheriting the reusable method class into all our page object files so that we can access the reusable methods across every page object class as we are inheriting them (i.e. without creatin it multiple times we are placing in one file and inheriting that into page object files).
+
+Second reusable method is from test perspective that is in "basetest".
+
+3. We have some reusable classes and don't want to create objects for each and every reusable class. So we are simply inheriting them to child classes. In this way we are using inheritance to use reusable method and classes.
+
+4. We use JSON files to pass the data and based on number of entries created in json test will run that many times.
+
+->In TestNG we have a concept called "DataProvider" which will help to parameterize test data. And data providers also accepts "HashMap" as an object to send the data. We can create multiple hashmap objects and send from dataprovider to iterate them multiple times. 
+
+From JSON files i write utility which converts JSON content to HashMap and once it is converted to HashMap object , I will pass it to dataprovider
+
+->Convert JSON to HashMap : A dependency called Jackson databind where we need to externally get it and put it in project. So using Jackson data bind utilities there are classes like object mapper which will convert your JSON string content into list of HashMaps.
+
+5. We are using implements in Listeners class. That means we are implementing TetsNG Listeners in our framework. Here ITestListener is an interface.
+
+-> We are implementing ITestListener interface because it provides methods which are helpful to write some code where we can avoid to write in the test case. 
+-> We are using baseinterface here where "webdriver" itself is an interface and we use TestNG interfaces also.
+
+6. Encapsulation : hiding the implementation details of a class from another class and only showing them as action methods as visible by marking them public(i.e. we keep fields private and action methods public).
+
+Web elements should only use in action methods.To stop the usage of web element we can write as "private WebElement", as we marked it as private then they are strictly accessible only within that class.  
+
+7. To support parallel run in testng.xml file we make sure that attribute of parallel is set to tests(i.e. we are asking tests to run parallely and each test constitutes one class name), and two class are running parallely with its own thread because at a time only one test each class will run.
+
+We achieve thread safe that ThreadLocal class is one which can get unique thread ID, and store them using set method and retrive them using get method.
+
+-> We ran into the concurrent issue while generating one single report, consolidated report for all test cases and we ran into issue and solved the problem using threadlocal class.
+
+8. If we keep driver object static then you cannot achieve parallel testing in framework because static keyword is commonly shared across all the threads.
+
+When the tests in testing.xml starts in parallel in the separate threads. So when it is accessing driver it creates fresh instance. And when another thread is also accessing driver parallelly to create new browser it again creates fresh instance for its own thread. All the variables are created for their own thread so there is no colliding. But if we mark them as static the variables will be shared across the threads. So if we run two drivers parallelly same driver variable will be shared for two threads. 
+
+Static variables use common space allocation for all the threads.
+It can be written such as which are independent of test cases we run. And we cannot use static for the main.
+
+9. By creating java properties file and we are reading this properties in the base test with properties class which has ability to read any file which have .property extension. 
+
+-> We can declare different variables globally and we can declare globally which browser we want to execute and declare in properties file and drive from there and can also give the URL. Even timeouts we can drive it from "properties.file". 
+
+-> We can drive global properties from maven terminals(i.e. as mvn test -PTestng -Dbrowser=chrome).We can also get it at runtime from commands if project is on maven.
+
+->We will catch the maven variable in code with the help of system.getproperty  and provide maven parameter name. And we can use  ternary operator if we want it to drive it from maven or f we want to drive it from properties.file.
+
+10. We have only 100 test cases but we identified 25 as smoke tests which we want to run , by using tetng groups. Whaterver we identified as smoke we are going to mark them as a group sequels to smoke as on of the helper attribute for our test annotation. As we mark them ten we create one XML file and only run tests which identified as a smoke. Even in pom.file we can create a separate profile.
+
+11. Flaky test means which are inconsistent and might fail randomly, but pass n the second attempt. With the IRetry method we can and by giving an attribute like calling retry analyzer and give which class we have t give the class u have to return the logic to retry. 
+
+12. We take screenshot on test failures using testnglisteners and skips when test passes.
+
+13. For locators we rely on page objects, by using page objects we pull up the locators for test. And in abstract class we have all reusable stuff and all classes inherits from abstract components. This is how we maintaining all common objects of all page objects to one abstract components.
+We have basetets to store all common codes which belongs to all the test cases ans we use inheritance concepts here. So all the test case classes will extend this parent class and use the reusable utility.
+
+So page objects uses abstract components and test cases uses base test. We write a test cases, take page objects and test need data from where it is coming. So data is something coming from JSON files. And before it reaches we have a parser, in the base test we wrote a parser called get data to JSON. So that method reads the JSON file converts it into hashmap. And test cases use that hash map and we have data provider for each and every test(i.e. JSON files reads the basetest methods and hashmap will be received by dataprovider and data provider sends data by utilizing it). 
+
+Capturing screenshots are externally taken care by listeners, so in listeners we have before test, after test success, after test failure. All the tests start from the listeners. First it executes the code in the listeners that create one entry for extent report and then goes to the test.
+
+Extent report is HTML report is generated with the help of the listeners. First when every test is trying to execute it will come to the listeners and execute a method where it creates entry to extent report and execute it. Once execution is done it come backs to the listeners and then says test fail/pass and send that entry to extent report. So we are using listeners as a middleware between extent reporting and testing.
+
+XML files will decide which test to execute and then it gets connected to test block. We trigger XML's from pom.xml file. In terms of profiles we provide enteries for testing.xml files    
+

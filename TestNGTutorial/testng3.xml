@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="Suite">
+  <test name="PersonalLoan">
+    <classes>
+      <class name="RunningTestCasesInTestNG1.Code1"/>
+      <methods>
+		  <include name = "Demo"/>
+	  </methods>
+      <class name="RunningTestCasesInTestNG1.Code2PrioritizingTestCasesWithTestNG"/>
+      <class name="RunningTestCasesInTestNG1.Code4PrioritizingTestCasesWithTestNG"/>
+    </classes>
+  </test> <!-- Test -->
+  
+  <test name = "CarLoan">
+  <classes>
+      <class name="RunningTestCasesInTestNG1.Code3PrioritizingTestCasesWithTestNG"/>
+      <methods>
+		  <exclude name = "mobile.*"/>
+	  </methods>
+  </classes>
+  </test>
+</suite> <!-- Suite -->
